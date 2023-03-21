@@ -1,8 +1,9 @@
 import { useState } from "react";
 
-function Square({ value, onSquareClick }) {
+function Square({ value, onSquareClick, isWinningSquare}) {
+  const className = "square" + (isWinningSquare ? " winning-square" : "");
   return (
-    <button className="square" onClick={onSquareClick}>
+    <button className={className} onClick={onSquareClick}>
       {value}
     </button>
   );
@@ -10,7 +11,7 @@ function Square({ value, onSquareClick }) {
 
 function Board({ xIsNext, squares, onPlay }) {
   function handleClick(i) {
-    if (calculateWinner(squares) || squares[i]) {
+    if (calculateWinner(squares).winner || squares[i]) {
       return;
     }
 
@@ -23,11 +24,15 @@ function Board({ xIsNext, squares, onPlay }) {
     onPlay(nextSquares);
   }
 
-  const winner = calculateWinner(squares);
+  const winnerInfo = calculateWinner(squares);
   let status;
-  if (winner) {
-    status = "Winner: " + winner;
-  } else {
+  if (winnerInfo.winner) {
+    status = "Winner: " + winnerInfo.winner;
+  }
+  else if (isBoardFull(squares)){
+    status = "Draw!";
+  } 
+  else {
     status = "Next player: " + (xIsNext ? "X" : "O");
   }
 
@@ -36,7 +41,14 @@ function Board({ xIsNext, squares, onPlay }) {
     let squaresComponent = [];
     for(let j = 0; j < 3; j++){
       let square =  i * 3 + j;
-      squaresComponent.push(<Square key={square} value={squares[square]} onSquareClick={() => handleClick(square)} />)
+      const isWinningSquare = winnerInfo.winningSquares.includes(square);
+      squaresComponent.push(
+      <Square 
+        key={square} 
+        value={squares[square]} 
+        onSquareClick={() => handleClick(square)}
+        isWinningSquare={isWinningSquare} 
+      />)
     }
     rows.push(<div key={i} className="board-row">{squaresComponent}</div>)
   }
@@ -124,8 +136,17 @@ function calculateWinner(squares) {
   for (let i = 0; i < lines.length; i++) {
     const [a, b, c] = lines[i];
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
+      return { winner: squares[a], winningSquares: [a, b, c] };
     }
   }
-  return null;
+  return { winner: null, winningSquares: [] };
+}
+
+function isBoardFull(squares) {
+  for (let i = 0; i < squares.length; i++) {
+    if (squares[i] == null) {
+      return false;
+    }
+  }
+  return true;
 }
